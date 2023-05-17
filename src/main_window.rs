@@ -1,5 +1,5 @@
 use gtk::prelude::*;
-use gtk::{Application, ApplicationWindow, HeaderBar, Entry, ComboBoxText, TextView, ScrolledWindow, Button};
+use gtk::{Application, ApplicationWindow, HeaderBar, Entry, ComboBoxText, TextView, ScrolledWindow, Button, TextBuffer};
 use reqwest::Client;
 use std::error::Error;
 use serde_json::Value;
@@ -7,9 +7,11 @@ use glib::prelude::*;
 use gtk::gdk::key;
 use gtk::gdk::keys::constants::Return;
 use gdk::EventKey;
+use gtk::atk::RelationType::Null;
 use gtk::Inhibit;
 use std::sync::Arc;
 use std::sync::Mutex;
+use gtk::TextTagTable;
 
 pub fn build_ui(application: &Application) {
     let window = ApplicationWindow::new(application);
@@ -42,8 +44,7 @@ pub fn build_ui(application: &Application) {
             eprintln!("Failed to fetch models from {}", endpoint);
         }
     });
-
-
+    
     headerbar.pack_start(&endpoint_entry);
     headerbar.pack_end(&model_combo);
 
@@ -51,7 +52,9 @@ pub fn build_ui(application: &Application) {
     scrolled_window.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
 
     let text_view = TextView::new();
+    let text_view_buffer = TextBuffer::new(Some(&TextTagTable::new()));
     text_view.set_editable(false);
+    text_view.set_buffer(Some(&text_view_buffer));
     text_view.set_cursor_visible(false);
 
     scrolled_window.add(&text_view);
