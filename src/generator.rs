@@ -2,14 +2,14 @@ use reqwest::blocking::Client;
 use serde_json::json;
 use std::time::Duration;
 
-pub fn get_chat_response(temp: &str, init: &str, prompt: &str) -> Result<String, reqwest::Error> {
+pub fn get_chat_response(model: &str, temp: &str, init: &str, prompt: &str) -> Result<String, reqwest::Error> {
     let client = Client::builder()
         .timeout(Duration::from_secs(300))
         .build()?;
 
     let prompt_input = format!("{}{}\n", init, prompt);
     let request_data = json!({
-        "model": "WizardLM-7B-uncensored.ggml.q4_0.bin",
+        "model": model,
         "prompt": prompt_input,
         "temperature": temp.parse::<f64>().unwrap(),
         // "stream": false,

@@ -1,3 +1,4 @@
+use gdk::cairo::FontOptions;
 use gtk::prelude::*;
 use gtk::{Application, ApplicationWindow, HeaderBar, Entry, ComboBoxText, TextView, ScrolledWindow, Button, TextBuffer};
 use reqwest::Client;
@@ -12,6 +13,7 @@ use gtk::Inhibit;
 use std::sync::Arc;
 use std::sync::Mutex;
 use gtk::TextTagTable;
+use crate::generator::get_chat_response;
 
 pub fn build_ui(application: &Application) {
     let window = ApplicationWindow::new(application);
@@ -27,7 +29,7 @@ pub fn build_ui(application: &Application) {
 
     let endpoint_buffer = gtk::EntryBuffer::new(None);
     let endpoint_entry = Entry::with_buffer(&endpoint_buffer);
-    endpoint_entry.set_placeholder_text(Some("API endpoint"));
+    endpoint_entry.set_placeholder_text(Some("Endpoint address"));
 
     let model_combo_arc = Arc::new(Mutex::new(model_combo.clone()));
     let endpoint_buffer_arc = Arc::new(endpoint_buffer);
@@ -52,6 +54,7 @@ pub fn build_ui(application: &Application) {
     scrolled_window.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
 
     let text_view = TextView::new();
+    text_view.set_wrap_mode(gtk::WrapMode::Word);
     let text_view_buffer = TextBuffer::new(Some(&TextTagTable::new()));
     text_view.set_editable(false);
     text_view.set_buffer(Some(&text_view_buffer));
@@ -61,8 +64,26 @@ pub fn build_ui(application: &Application) {
 
     let send_button = Button::with_label("Send");
 
-    let input_entry = Entry::new();
-    input_entry.set_placeholder_text(Some("Input text"));
+    let input_buffer = gtk::EntryBuffer::new(None);
+    let input_entry = Entry::with_buffer(&input_buffer);
+    input_entry.set_placeholder_text(Some("Write a message here..."));
+    // hell hack
+    let input_entry_arc = Arc::new(input_entry.clone());
+    let input_buffer_arc = Arc::new(input_buffer);
+    input_entry.connect_activate(move |entry| {
+        let model = model_combo.active_text().unwrap().to_string();
+        let temp = "0.7";
+        let init = "I am a chatbot.";
+        let prompt = input_buffer_arc.text();
+
+        if let Ok(response) = get_chat_response(&model, &temp, &init, &prompt) {
+            // Update the text view with the response
+            text_view_buffer.insert_at_cursor(&response);
+        } else {
+            eprintln!("Failed to get chat response");
+        }
+    });
+
 
     let vbox = gtk::Box::new(gtk::Orientation::Vertical, 5);
     vbox.pack_start(&scrolled_window, true, true, 0);
